@@ -5,8 +5,13 @@ import {
   Box,
   Button,
   Card,
+  CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -38,6 +43,30 @@ function StaffDashboardPage() {
     field: 'id',
     direction: 'desc',
   })
+  const [selectedBooking, setSelectedBooking] = useState(null)
+
+  const summaryStats = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const upcomingCheckIns = bookings.filter((booking) => {
+      return booking.status === 'confirmed' && new Date(booking.check_in) >= today
+    }).length
+
+    const totalRevenue = bookings.reduce((total, booking) => {
+      if (booking.status !== 'confirmed') {
+        return total
+      }
+
+      return total + Number(booking.total_price || 0)
+    }, 0)
+
+    return {
+      totalBookings: bookings.length,
+      upcomingCheckIns,
+      totalRevenue,
+    }
+  }, [bookings])
 
   const filteredAndSortedBookings = useMemo(() => {
     const customerName = dashboardFilters.customerName.trim().toLowerCase()
@@ -101,6 +130,10 @@ function StaffDashboardPage() {
     setDashboardFilters((current) => ({ ...current, [name]: value }))
   }
 
+  const handleCloseBookingDialog = () => {
+    setSelectedBooking(null)
+  }
+
   const renderSortLabel = (field, label) => (
     <TableSortLabel
       active={sortConfig.field === field}
@@ -145,6 +178,33 @@ function StaffDashboardPage() {
 
           {!isLoading && !error && bookings.length > 0 && (
             <>
+              <Box className="dashboard-summary-grid">
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography color="text.secondary">Total Bookings</Typography>
+                    <Typography component="p" variant="h1" className="summary-value">
+                      {summaryStats.totalBookings}
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography color="text.secondary">Upcoming Check-ins</Typography>
+                    <Typography component="p" variant="h1" className="summary-value">
+                      {summaryStats.upcomingCheckIns}
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography color="text.secondary">Total Revenue</Typography>
+                    <Typography component="p" variant="h1" className="summary-value">
+                      {formatCurrency(summaryStats.totalRevenue)}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+
               <Card className="dashboard-filter-panel" variant="outlined">
                 <Box className="dashboard-filter-grid">
                   <Box>
@@ -200,7 +260,12 @@ function StaffDashboardPage() {
                       </TableHead>
                       <TableBody>
                         {filteredAndSortedBookings.map((booking) => (
-                          <TableRow key={booking.id} hover>
+                          <TableRow
+                            key={booking.id}
+                            hover
+                            className="clickable-row"
+                            onClick={() => setSelectedBooking(booking)}
+                          >
                             <TableCell>#{booking.id}</TableCell>
                             <TableCell>{booking.room?.number}</TableCell>
                             <TableCell>{booking.customer_name}</TableCell>
@@ -220,6 +285,7 @@ function StaffDashboardPage() {
                                 size="small"
                                 to={`/rooms/${booking.room_id}/history`}
                                 variant="outlined"
+                                onClick={(event) => event.stopPropagation()}
                               >
                                 View History
                               </Button>
@@ -235,6 +301,62 @@ function StaffDashboardPage() {
           )}
         </Stack>
       </Container>
+
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        open={Boolean(selectedBooking)}
+        onClose={handleCloseBookingDialog}
+      >
+        <DialogTitle>Booking Details</DialogTitle>
+        {selectedBooking && (
+          <DialogContent>
+            <Stack spacing={2}>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Booking ID</Typography>
+                <Typography fontWeight={700}>#{selectedBooking.id}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Room Number</Typography>
+                <Typography fontWeight={700}>{selectedBooking.room?.number}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Customer Name</Typography>
+                <Typography fontWeight={700}>{selectedBooking.customer_name}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Customer Email</Typography>
+                <Typography fontWeight={700}>{selectedBooking.customer_email}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Check In</Typography>
+                <Typography fontWeight={700}>{formatDate(selectedBooking.check_in)}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Check Out</Typography>
+                <Typography fontWeight={700}>{formatDate(selectedBooking.check_out)}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Guests</Typography>
+                <Typography fontWeight={700}>{selectedBooking.guests}</Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Total Price</Typography>
+                <Typography fontWeight={700}>
+                  {formatCurrency(selectedBooking.total_price)}
+                </Typography>
+              </Box>
+              <Box className="booking-summary">
+                <Typography color="text.secondary">Status</Typography>
+                <Chip label={selectedBooking.status} size="small" variant="outlined" />
+              </Box>
+            </Stack>
+          </DialogContent>
+        )}
+        <DialogActions>
+          <Button onClick={handleCloseBookingDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
