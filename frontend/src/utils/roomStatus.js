@@ -48,6 +48,33 @@ export function getRoomListingStatus(roomId, bookings, checkIn, checkOut) {
   return isOccupied ? 'Occupied' : 'Available'
 }
 
+export function getBookingStayStatus(booking) {
+  const today = getDateOnly(new Date())
+  const checkIn = getDateOnly(booking.check_in)
+  const checkOut = getDateOnly(booking.check_out)
+
+  if (today < checkIn) {
+    return 'Reserved'
+  }
+
+  if (today >= checkIn && today < checkOut) {
+    return 'Occupied'
+  }
+
+  return 'Completed'
+}
+
+export function getBookingStayStatusChipColor(status) {
+  switch (status) {
+    case 'Reserved':
+      return 'warning'
+    case 'Occupied':
+      return 'error'
+    default:
+      return 'success'
+  }
+}
+
 export function getRoomStatusChipColor(status) {
   switch (status) {
     case 'Occupied':

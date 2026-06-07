@@ -20,6 +20,7 @@ import {
 } from '@mui/material'
 import LoadingState from '../components/LoadingState'
 import { formatCurrency, formatDate } from '../utils/formatters'
+import { getBookingStayStatus, getBookingStayStatusChipColor } from '../utils/roomStatus'
 
 function RoomHistoryPage() {
   const { id } = useParams()
@@ -128,7 +129,11 @@ function RoomHistoryPage() {
                             <TableCell>{formatDate(booking.check_out)}</TableCell>
                             <TableCell align="right">{booking.guests}</TableCell>
                             <TableCell>
-                              <Chip label={booking.status} size="small" variant="outlined" />
+                              <Chip
+                                color={getBookingStayStatusChipColor(getBookingStayStatus(booking))}
+                                label={getBookingStayStatus(booking)}
+                                size="small"
+                              />
                             </TableCell>
                           </TableRow>
                         ))}

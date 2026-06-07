@@ -30,7 +30,12 @@ import {
 import LoadingState from '../components/LoadingState'
 import { compareSortValues, getBookingSortValue } from '../utils/bookingSort'
 import { formatCurrency, formatDate } from '../utils/formatters'
-import { getRoomStatus, getRoomStatusChipColor } from '../utils/roomStatus'
+import {
+  getBookingStayStatus,
+  getBookingStayStatusChipColor,
+  getRoomStatus,
+  getRoomStatusChipColor,
+} from '../utils/roomStatus'
 
 function StaffDashboardPage() {
   const [bookings, setBookings] = useState([])
@@ -75,7 +80,7 @@ function StaffDashboardPage() {
     const filteredBookings = bookings.filter((booking) => {
       const matchesName = booking.customer_name.toLowerCase().includes(customerName)
       const matchesStatus = dashboardFilters.status
-        ? booking.status === dashboardFilters.status
+        ? getBookingStayStatus(booking) === dashboardFilters.status
         : true
 
       return matchesName && matchesStatus
@@ -90,9 +95,7 @@ function StaffDashboardPage() {
     })
   }, [bookings, dashboardFilters, sortConfig])
 
-  const bookingStatuses = useMemo(() => {
-    return [...new Set(bookings.map((booking) => booking.status))].sort()
-  }, [bookings])
+  const bookingStatuses = ['Reserved', 'Occupied', 'Completed']
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -276,8 +279,12 @@ function StaffDashboardPage() {
                             <TableCell align="right">
                               {formatCurrency(booking.total_price)}
                             </TableCell>
-                            <TableCell>
-                              <Chip label={booking.status} size="small" variant="outlined" />
+                          <TableCell>
+                              <Chip
+                                color={getBookingStayStatusChipColor(getBookingStayStatus(booking))}
+                                label={getBookingStayStatus(booking)}
+                                size="small"
+                              />
                             </TableCell>
                             <TableCell align="right">
                               <Button
@@ -348,7 +355,11 @@ function StaffDashboardPage() {
               </Box>
               <Box className="booking-summary">
                 <Typography color="text.secondary">Status</Typography>
-                <Chip label={selectedBooking.status} size="small" variant="outlined" />
+                <Chip
+                  color={getBookingStayStatusChipColor(getBookingStayStatus(selectedBooking))}
+                  label={getBookingStayStatus(selectedBooking)}
+                  size="small"
+                />
               </Box>
             </Stack>
           </DialogContent>

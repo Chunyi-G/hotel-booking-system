@@ -1,3 +1,5 @@
+import { getBookingStayStatus } from './roomStatus'
+
 export function getBookingSortValue(booking, field) {
   switch (field) {
     case 'id':
@@ -11,7 +13,7 @@ export function getBookingSortValue(booking, field) {
     case 'check_out':
       return new Date(booking.check_out).getTime()
     case 'status':
-      return booking.status || ''
+      return getBookingStayStatus(booking)
     default:
       return ''
   }

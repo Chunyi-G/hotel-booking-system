@@ -19,6 +19,7 @@ import {
 } from '@mui/material'
 import LoadingState from '../components/LoadingState'
 import { formatCurrency, formatDate } from '../utils/formatters'
+import { getBookingStayStatus, getBookingStayStatusChipColor } from '../utils/roomStatus'
 
 function getNightCount(checkIn, checkOut) {
   const millisecondsPerDay = 1000 * 60 * 60 * 24
@@ -188,7 +189,11 @@ function CustomerHistoryPage() {
                             {formatCurrency(booking.total_price)}
                           </TableCell>
                           <TableCell>
-                            <Chip label={booking.status} size="small" variant="outlined" />
+                            <Chip
+                              color={getBookingStayStatusChipColor(getBookingStayStatus(booking))}
+                              label={getBookingStayStatus(booking)}
+                              size="small"
+                            />
                           </TableCell>
                         </TableRow>
                       ))}
