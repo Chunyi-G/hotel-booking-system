@@ -516,13 +516,15 @@ function RoomSearchPage() {
                           </Stack>
 
                           <Stack spacing={1}>
-                            <Box>
-                              <Chip
-                                color={getRoomStatusChipColor(roomStatus)}
-                                label={roomStatus}
-                                size="small"
-                              />
-                            </Box>
+                            {hasSelectedDateRange && (
+                              <Box>
+                                <Chip
+                                  color={getRoomStatusChipColor(roomStatus)}
+                                  label={roomStatus}
+                                  size="small"
+                                />
+                              </Box>
+                            )}
                             <Typography color="text.secondary">
                               Capacity: {room.capacity} guests
                             </Typography>
