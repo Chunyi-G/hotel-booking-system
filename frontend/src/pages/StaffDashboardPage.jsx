@@ -30,6 +30,7 @@ import {
 import LoadingState from '../components/LoadingState'
 import { compareSortValues, getBookingSortValue } from '../utils/bookingSort'
 import { formatCurrency, formatDate } from '../utils/formatters'
+import { getRoomStatus, getRoomStatusChipColor } from '../utils/roomStatus'
 
 function StaffDashboardPage() {
   const [bookings, setBookings] = useState([])
@@ -148,25 +149,14 @@ function StaffDashboardPage() {
     <Box className="app-shell">
       <Container maxWidth="xl">
         <Stack spacing={4}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            spacing={2}
-          >
-            <Box className="page-header">
-              <Typography component="h1" variant="h1">
-                Staff Dashboard
-              </Typography>
-              <Typography color="text.secondary">
-                View hotel bookings. Click sortable headers to change order.
-              </Typography>
-            </Box>
-            <Box>
-              <Button component={RouterLink} to="/" variant="outlined">
-                Back to Rooms
-              </Button>
-            </Box>
-          </Stack>
+          <Box className="page-header">
+            <Typography component="h1" variant="h1">
+              Staff Dashboard
+            </Typography>
+            <Typography color="text.secondary">
+              View hotel bookings. Click sortable headers to change order.
+            </Typography>
+          </Box>
 
           {isLoading && <LoadingState message="Loading bookings" />}
 
@@ -250,6 +240,7 @@ function StaffDashboardPage() {
                           <TableCell>{renderSortLabel('room_number', 'Room Number')}</TableCell>
                           <TableCell>{renderSortLabel('customer_name', 'Customer Name')}</TableCell>
                           <TableCell>Customer Email</TableCell>
+                          <TableCell>Room Status</TableCell>
                           <TableCell>{renderSortLabel('check_in', 'Check In')}</TableCell>
                           <TableCell>{renderSortLabel('check_out', 'Check Out')}</TableCell>
                           <TableCell align="right">Guests</TableCell>
@@ -270,6 +261,15 @@ function StaffDashboardPage() {
                             <TableCell>{booking.room?.number}</TableCell>
                             <TableCell>{booking.customer_name}</TableCell>
                             <TableCell>{booking.customer_email}</TableCell>
+                            <TableCell>
+                              <Chip
+                                color={getRoomStatusChipColor(
+                                  getRoomStatus(booking.room_id, bookings),
+                                )}
+                                label={getRoomStatus(booking.room_id, bookings)}
+                                size="small"
+                              />
+                            </TableCell>
                             <TableCell>{formatDate(booking.check_in)}</TableCell>
                             <TableCell>{formatDate(booking.check_out)}</TableCell>
                             <TableCell align="right">{booking.guests}</TableCell>

@@ -27,7 +27,6 @@ class RoomAvailabilityController extends Controller
                     ->where('check_in', '<', $validated['check_out'])
                     ->where('check_out', '>', $validated['check_in']);
             })
-            ->orderBy('category')
             ->orderBy('number')
             ->get();
 

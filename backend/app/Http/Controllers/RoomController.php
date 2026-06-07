@@ -19,7 +19,6 @@ class RoomController extends Controller
             ->when($validated['category'] ?? null, function ($query, string $category): void {
                 $query->where('category', $category);
             })
-            ->orderBy('category')
             ->orderBy('number')
             ->get();
 

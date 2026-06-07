@@ -22,6 +22,7 @@ import {
 import LoadingState from '../components/LoadingState'
 import { roomCategories } from '../constants/roomCategories'
 import { formatCurrency } from '../utils/formatters'
+import { getRoomListingStatus, getRoomStatusChipColor } from '../utils/roomStatus'
 
 const initialBookingForm = {
   customer_name: '',
@@ -38,6 +39,7 @@ function RoomSearchPage() {
     category: '',
   })
   const [rooms, setRooms] = useState([])
+  const [bookings, setBookings] = useState([])
   const [hasFiltered, setHasFiltered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -54,16 +56,26 @@ function RoomSearchPage() {
       setError('')
 
       try {
-        const response = await fetch('/api/rooms')
-        const payload = await response.json()
+        const [roomsResponse, bookingsResponse] = await Promise.all([
+          fetch('/api/rooms'),
+          fetch('/api/bookings'),
+        ])
+        const roomsPayload = await roomsResponse.json()
+        const bookingsPayload = await bookingsResponse.json()
 
-        if (!response.ok) {
-          throw new Error(payload.message || 'Unable to load rooms.')
+        if (!roomsResponse.ok) {
+          throw new Error(roomsPayload.message || 'Unable to load rooms.')
         }
 
-        setRooms(payload.data || [])
+        if (!bookingsResponse.ok) {
+          throw new Error(bookingsPayload.message || 'Unable to load room statuses.')
+        }
+
+        setRooms(roomsPayload.data || [])
+        setBookings(bookingsPayload.data || [])
       } catch (loadError) {
         setRooms([])
+        setBookings([])
         setError(loadError.message)
       } finally {
         setIsLoading(false)
@@ -123,7 +135,7 @@ function RoomSearchPage() {
       params.set('category', filters.category)
     }
 
-    const endpoint = hasDateRange ? '/api/rooms/available' : '/api/rooms'
+    const endpoint = '/api/rooms'
     const queryString = params.toString()
 
     setIsLoading(true)
@@ -157,6 +169,11 @@ function RoomSearchPage() {
 
     if (filters.check_out <= filters.check_in) {
       setError('Check-out date must be after check-in date.')
+      return
+    }
+
+    if (getRoomListingStatus(room.id, bookings, filters.check_in, filters.check_out) === 'Unavailable') {
+      setError('This room is unavailable for the selected dates.')
       return
     }
 
@@ -240,102 +257,114 @@ function RoomSearchPage() {
               </Typography>
             </Box>
 
-            <Card className="booking-panel" variant="outlined">
+            <Card className="booking-form-card" variant="outlined">
               <CardContent>
-                <Stack spacing={3}>
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    justifyContent="space-between"
-                    spacing={2}
-                  >
-                    <Box>
-                      <Typography component="h2" variant="h2">
-                        Room {selectedRoom.number}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        {selectedRoom.category} - {selectedRoom.capacity} guests -{' '}
-                        {formatCurrency(selectedRoom.price_per_night)} / night
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography color="text.secondary">Stay Dates</Typography>
-                      <Typography fontWeight={700}>
-                        {filters.check_in} to {filters.check_out}
-                      </Typography>
-                    </Box>
-                  </Stack>
+                <Stack spacing={4}>
+                  <Box className="booking-room-summary">
+                    <Grid container spacing={2.5}>
+                      <Grid item xs={12} md={3}>
+                        <Typography color="text.secondary">Selected Room</Typography>
+                        <Typography component="h2" variant="h2">
+                          Room {selectedRoom.number}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Typography color="text.secondary">Category</Typography>
+                        <Typography fontWeight={700}>{selectedRoom.category}</Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Typography color="text.secondary">Capacity</Typography>
+                        <Typography fontWeight={700}>{selectedRoom.capacity} guests</Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Typography color="text.secondary">Price</Typography>
+                        <Typography fontWeight={700}>
+                          {formatCurrency(selectedRoom.price_per_night)} / night
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Divider />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography color="text.secondary">Stay Dates</Typography>
+                        <Typography fontWeight={700}>
+                          {filters.check_in} to {filters.check_out}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
 
                   <Divider />
 
                   {bookingErrorMessage && <Alert severity="error">{bookingErrorMessage}</Alert>}
 
                   <Box component="form" onSubmit={handleBookingSubmit}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          required
-                          error={Boolean(getFieldError('customer_name'))}
-                          helperText={getFieldError('customer_name')}
-                          label="Customer Name"
-                          name="customer_name"
-                          value={bookingForm.customer_name}
-                          onChange={handleBookingChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          required
-                          error={Boolean(getFieldError('customer_email'))}
-                          helperText={getFieldError('customer_email')}
-                          label="Email"
-                          name="customer_email"
-                          type="email"
-                          value={bookingForm.customer_email}
-                          onChange={handleBookingChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          error={Boolean(getFieldError('customer_phone'))}
-                          helperText={getFieldError('customer_phone')}
-                          label="Phone"
-                          name="customer_phone"
-                          value={bookingForm.customer_phone}
-                          onChange={handleBookingChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          required
-                          error={Boolean(getFieldError('guests'))}
-                          helperText={getFieldError('guests')}
-                          inputProps={{ min: 1, max: selectedRoom.capacity }}
-                          label="Number of Guests"
-                          name="guests"
-                          type="number"
-                          value={bookingForm.guests}
-                          onChange={handleBookingChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={isSubmittingBooking || bookingCompleted}
-                          >
-                            {isSubmittingBooking ? 'Submitting...' : 'Submit Booking'}
-                          </Button>
-                          <Button type="button" variant="outlined" onClick={resetBookingState}>
-                            Back to Rooms
-                          </Button>
-                        </Stack>
-                      </Grid>
-                    </Grid>
+                    <Stack spacing={3}>
+                      <TextField
+                        fullWidth
+                        required
+                        error={Boolean(getFieldError('customer_name'))}
+                        helperText={getFieldError('customer_name')}
+                        label="Customer Name"
+                        name="customer_name"
+                        value={bookingForm.customer_name}
+                        onChange={handleBookingChange}
+                      />
+                      <TextField
+                        fullWidth
+                        required
+                        error={Boolean(getFieldError('customer_email'))}
+                        helperText={getFieldError('customer_email')}
+                        label="Email"
+                        name="customer_email"
+                        type="email"
+                        value={bookingForm.customer_email}
+                        onChange={handleBookingChange}
+                      />
+                      <TextField
+                        fullWidth
+                        error={Boolean(getFieldError('customer_phone'))}
+                        helperText={getFieldError('customer_phone')}
+                        label="Phone"
+                        name="customer_phone"
+                        value={bookingForm.customer_phone}
+                        onChange={handleBookingChange}
+                      />
+                      <TextField
+                        fullWidth
+                        required
+                        error={Boolean(getFieldError('guests'))}
+                        helperText={getFieldError('guests')}
+                        inputProps={{ min: 1, max: selectedRoom.capacity }}
+                        label="Number of Guests"
+                        name="guests"
+                        type="number"
+                        value={bookingForm.guests}
+                        onChange={handleBookingChange}
+                      />
+                      <Stack
+                        className="booking-form-actions"
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.5}
+                      >
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          size="large"
+                          disabled={isSubmittingBooking || bookingCompleted}
+                        >
+                          {isSubmittingBooking ? 'Submitting...' : 'Submit Booking'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outlined"
+                          size="large"
+                          onClick={resetBookingState}
+                        >
+                          Back to Rooms
+                        </Button>
+                      </Stack>
+                    </Stack>
                   </Box>
                 </Stack>
               </CardContent>
@@ -430,46 +459,69 @@ function RoomSearchPage() {
 
           {!isLoading && rooms.length > 0 && (
             <Grid container spacing={2.5}>
-              {rooms.map((room) => (
-                <Grid item xs={12} sm={6} md={4} key={room.id}>
-                  <Card className="room-card" variant="outlined">
-                    <CardContent>
-                      <Stack spacing={2}>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          spacing={2}
-                        >
-                          <Typography component="h2" variant="h2">
-                            Room {room.number}
-                          </Typography>
-                          <Chip
-                            color="primary"
-                            label={room.category}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </Stack>
+              {rooms.map((room) => {
+                const hasSelectedDateRange = Boolean(filters.check_in && filters.check_out)
+                const roomStatus = getRoomListingStatus(
+                  room.id,
+                  bookings,
+                  hasSelectedDateRange ? filters.check_in : null,
+                  hasSelectedDateRange ? filters.check_out : null,
+                )
+                const isUnavailable = roomStatus === 'Unavailable'
 
-                        <Stack spacing={1}>
-                          <Typography color="text.secondary">
-                            Capacity: {room.capacity} guests
-                          </Typography>
-                          <Typography className="room-price">
-                            {formatCurrency(room.price_per_night)} / night
-                          </Typography>
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={room.id}>
+                    <Card className="room-card" variant="outlined">
+                      <CardContent>
+                        <Stack spacing={2}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            spacing={2}
+                          >
+                            <Typography component="h2" variant="h2">
+                              Room {room.number}
+                            </Typography>
+                            <Chip
+                              color="primary"
+                              label={room.category}
+                              size="small"
+                              variant="outlined"
+                            />
+                          </Stack>
+
+                          <Stack spacing={1}>
+                            <Box>
+                              <Chip
+                                color={getRoomStatusChipColor(roomStatus)}
+                                label={roomStatus}
+                                size="small"
+                              />
+                            </Box>
+                            <Typography color="text.secondary">
+                              Capacity: {room.capacity} guests
+                            </Typography>
+                            <Typography className="room-price">
+                              {formatCurrency(room.price_per_night)} / night
+                            </Typography>
+                          </Stack>
                         </Stack>
-                      </Stack>
-                    </CardContent>
-                    <CardActions>
-                      <Button fullWidth variant="contained" onClick={() => handleBookNow(room)}>
-                        Book Now
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
+                      </CardContent>
+                      <CardActions>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          disabled={isUnavailable}
+                          onClick={() => handleBookNow(room)}
+                        >
+                          {isUnavailable ? 'Unavailable' : 'Book Now'}
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                )
+              })}
             </Grid>
           )}
         </Stack>
