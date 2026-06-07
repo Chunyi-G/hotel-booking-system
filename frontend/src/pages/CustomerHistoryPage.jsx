@@ -92,11 +92,7 @@ function CustomerHistoryPage() {
     <Box className="app-shell">
       <Container maxWidth="lg">
         <Stack spacing={4}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            spacing={2}
-          >
+          <Stack className="history-page-header" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Box className="page-header">
               <Typography component="h1" variant="h1">
                 Customer History
@@ -105,8 +101,8 @@ function CustomerHistoryPage() {
                 View booking activity for one customer.
               </Typography>
             </Box>
-            <Box>
-              <Button component={RouterLink} to="/staff-dashboard" variant="outlined">
+            <Box className="history-page-action">
+              <Button component={RouterLink} to="/staff-dashboard" variant="outlined" size="large">
                 Back to Dashboard
               </Button>
             </Box>

@@ -33,8 +33,6 @@ import { formatCurrency, formatDate } from '../utils/formatters'
 import {
   getBookingStayStatus,
   getBookingStayStatusChipColor,
-  getRoomStatus,
-  getRoomStatusChipColor,
 } from '../utils/roomStatus'
 
 function StaffDashboardPage() {
@@ -243,7 +241,6 @@ function StaffDashboardPage() {
                           <TableCell>{renderSortLabel('room_number', 'Room Number')}</TableCell>
                           <TableCell>{renderSortLabel('customer_name', 'Customer Name')}</TableCell>
                           <TableCell>Customer Email</TableCell>
-                          <TableCell>Room Status</TableCell>
                           <TableCell>{renderSortLabel('check_in', 'Check In')}</TableCell>
                           <TableCell>{renderSortLabel('check_out', 'Check Out')}</TableCell>
                           <TableCell align="right">Guests</TableCell>
@@ -264,15 +261,6 @@ function StaffDashboardPage() {
                             <TableCell>{booking.room?.number}</TableCell>
                             <TableCell>{booking.customer_name}</TableCell>
                             <TableCell>{booking.customer_email}</TableCell>
-                            <TableCell>
-                              <Chip
-                                color={getRoomStatusChipColor(
-                                  getRoomStatus(booking.room_id, bookings),
-                                )}
-                                label={getRoomStatus(booking.room_id, bookings)}
-                                size="small"
-                              />
-                            </TableCell>
                             <TableCell>{formatDate(booking.check_in)}</TableCell>
                             <TableCell>{formatDate(booking.check_out)}</TableCell>
                             <TableCell align="right">{booking.guests}</TableCell>

@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Card, CardActions, CardContent, Container, Stack, Typography } from '@mui/material'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { formatDate } from '../utils/formatters'
 
 function BookingSuccessPage() {
   const location = useLocation()
@@ -51,11 +52,11 @@ function BookingSuccessPage() {
                 </Box>
                 <Box className="booking-summary">
                   <Typography color="text.secondary">Check-in Date</Typography>
-                  <Typography fontWeight={700}>{booking.check_in}</Typography>
+                  <Typography fontWeight={700}>{formatDate(booking.check_in)}</Typography>
                 </Box>
                 <Box className="booking-summary">
                   <Typography color="text.secondary">Check-out Date</Typography>
-                  <Typography fontWeight={700}>{booking.check_out}</Typography>
+                  <Typography fontWeight={700}>{formatDate(booking.check_out)}</Typography>
                 </Box>
               </Stack>
             </CardContent>
