@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BrowserRouter,
   Link as RouterLink,
@@ -31,6 +31,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   TextField,
   ThemeProvider,
   Typography,
@@ -90,6 +91,36 @@ function formatDate(value) {
     month: 'short',
     year: 'numeric',
   }).format(new Date(value))
+}
+
+function getBookingSortValue(booking, field) {
+  switch (field) {
+    case 'id':
+      return Number(booking.id)
+    case 'room_number':
+      return booking.room?.number || ''
+    case 'customer_name':
+      return booking.customer_name || ''
+    case 'check_in':
+      return new Date(booking.check_in).getTime()
+    case 'check_out':
+      return new Date(booking.check_out).getTime()
+    case 'status':
+      return booking.status || ''
+    default:
+      return ''
+  }
+}
+
+function compareSortValues(first, second) {
+  if (typeof first === 'number' && typeof second === 'number') {
+    return first - second
+  }
+
+  return String(first).localeCompare(String(second), undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  })
 }
 
 function RoomSearchPage() {
@@ -432,34 +463,34 @@ function RoomSearchPage() {
           </Box>
 
           <Card className="search-panel" variant="outlined">
-            <Typography component="h2" variant="h2" className="filter-title">
+            <Typography component="h2" variant="h2" sx={{ mb: 3 }}>
               Filter Rooms
             </Typography>
-            <Box component="form" onSubmit={handleSearch}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={3}>
+            <Box component="form" onSubmit={handleSearch} sx={{ mt: 3 }}>
+              <Box className="room-filter-grid">
+                <Box>
                   <TextField
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    label="Check-in Date"
+                    label="Check-in"
                     name="check_in"
+                    slotProps={{ inputLabel: { shrink: true } }}
                     type="date"
                     value={filters.check_in}
                     onChange={handleChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={3}>
+                </Box>
+                <Box>
                   <TextField
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    label="Check-out Date"
+                    label="Check-out"
                     name="check_out"
+                    slotProps={{ inputLabel: { shrink: true } }}
                     type="date"
                     value={filters.check_out}
                     onChange={handleChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={3}>
+                </Box>
+                <Box>
                   <FormControl fullWidth>
                     <InputLabel id="category-label">Room Category</InputLabel>
                     <Select
@@ -476,8 +507,8 @@ function RoomSearchPage() {
                       ))}
                     </Select>
                   </FormControl>
-                </Grid>
-                <Grid item xs={12} md={3}>
+                </Box>
+                <Box className="room-filter-action">
                   <Button
                     fullWidth
                     size="large"
@@ -487,8 +518,8 @@ function RoomSearchPage() {
                   >
                     {isLoading ? 'Filtering...' : 'Filter'}
                   </Button>
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
             </Box>
           </Card>
 
@@ -634,6 +665,39 @@ function StaffDashboardPage() {
   const [bookings, setBookings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [dashboardFilters, setDashboardFilters] = useState({
+    customerName: '',
+    status: '',
+  })
+  const [sortConfig, setSortConfig] = useState({
+    field: 'id',
+    direction: 'desc',
+  })
+
+  const filteredAndSortedBookings = useMemo(() => {
+    const customerName = dashboardFilters.customerName.trim().toLowerCase()
+
+    const filteredBookings = bookings.filter((booking) => {
+      const matchesName = booking.customer_name.toLowerCase().includes(customerName)
+      const matchesStatus = dashboardFilters.status
+        ? booking.status === dashboardFilters.status
+        : true
+
+      return matchesName && matchesStatus
+    })
+
+    return filteredBookings.sort((firstBooking, secondBooking) => {
+      const firstValue = getBookingSortValue(firstBooking, sortConfig.field)
+      const secondValue = getBookingSortValue(secondBooking, sortConfig.field)
+      const comparison = compareSortValues(firstValue, secondValue)
+
+      return sortConfig.direction === 'asc' ? comparison : -comparison
+    })
+  }, [bookings, dashboardFilters, sortConfig])
+
+  const bookingStatuses = useMemo(() => {
+    return [...new Set(bookings.map((booking) => booking.status))].sort()
+  }, [bookings])
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -648,11 +712,7 @@ function StaffDashboardPage() {
           throw new Error(payload.message || 'Unable to load bookings.')
         }
 
-        const newestFirst = [...(payload.data || [])].sort(
-          (first, second) => new Date(second.created_at) - new Date(first.created_at),
-        )
-
-        setBookings(newestFirst)
+        setBookings(payload.data || [])
       } catch (loadError) {
         setBookings([])
         setError(loadError.message)
@@ -663,6 +723,28 @@ function StaffDashboardPage() {
 
     loadBookings()
   }, [])
+
+  const handleSort = (field) => {
+    setSortConfig((current) => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+    }))
+  }
+
+  const handleDashboardFilterChange = (event) => {
+    const { name, value } = event.target
+    setDashboardFilters((current) => ({ ...current, [name]: value }))
+  }
+
+  const renderSortLabel = (field, label) => (
+    <TableSortLabel
+      active={sortConfig.field === field}
+      direction={sortConfig.field === field ? sortConfig.direction : 'asc'}
+      onClick={() => handleSort(field)}
+    >
+      {label}
+    </TableSortLabel>
+  )
 
   return (
     <Box className="app-shell">
@@ -678,7 +760,7 @@ function StaffDashboardPage() {
                 Staff Dashboard
               </Typography>
               <Typography color="text.secondary">
-                View hotel bookings sorted by newest first.
+                View hotel bookings. Click sortable headers to change order.
               </Typography>
             </Box>
             <Box>
@@ -702,25 +784,62 @@ function StaffDashboardPage() {
           )}
 
           {!isLoading && !error && bookings.length > 0 && (
-            <Card variant="outlined">
-              <TableContainer>
-                <Table className="bookings-table">
+            <>
+              <Card className="dashboard-filter-panel" variant="outlined">
+                <Box className="dashboard-filter-grid">
+                  <Box>
+                      <TextField
+                        fullWidth
+                        label="Search Customer Name"
+                        name="customerName"
+                        value={dashboardFilters.customerName}
+                        onChange={handleDashboardFilterChange}
+                      />
+                    </Box>
+                    <Box>
+                      <FormControl fullWidth>
+                        <InputLabel id="booking-status-label">Status</InputLabel>
+                        <Select
+                          label="Status"
+                          labelId="booking-status-label"
+                          name="status"
+                          value={dashboardFilters.status}
+                          onChange={handleDashboardFilterChange}
+                        >
+                          <MenuItem value="">All statuses</MenuItem>
+                          {bookingStatuses.map((status) => (
+                            <MenuItem key={status} value={status}>
+                              {status}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                </Box>
+              </Card>
+
+              {filteredAndSortedBookings.length === 0 ? (
+                <Alert severity="info">No bookings match those filters.</Alert>
+              ) : (
+                <Card variant="outlined">
+                  <TableContainer>
+                    <Table className="bookings-table">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Booking ID</TableCell>
-                      <TableCell>Room Number</TableCell>
-                      <TableCell>Customer Name</TableCell>
+                      <TableCell>{renderSortLabel('id', 'Booking ID')}</TableCell>
+                      <TableCell>{renderSortLabel('room_number', 'Room Number')}</TableCell>
+                      <TableCell>{renderSortLabel('customer_name', 'Customer Name')}</TableCell>
                       <TableCell>Customer Email</TableCell>
-                      <TableCell>Check In</TableCell>
-                      <TableCell>Check Out</TableCell>
+                      <TableCell>{renderSortLabel('check_in', 'Check In')}</TableCell>
+                      <TableCell>{renderSortLabel('check_out', 'Check Out')}</TableCell>
                       <TableCell align="right">Guests</TableCell>
                       <TableCell align="right">Total Price</TableCell>
-                      <TableCell>Status</TableCell>
+                      <TableCell>{renderSortLabel('status', 'Status')}</TableCell>
                       <TableCell align="right">History</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {bookings.map((booking) => (
+                    {filteredAndSortedBookings.map((booking) => (
                       <TableRow key={booking.id} hover>
                         <TableCell>#{booking.id}</TableCell>
                         <TableCell>{booking.room?.number}</TableCell>
@@ -746,9 +865,11 @@ function StaffDashboardPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              )}
+            </>
           )}
         </Stack>
       </Container>
@@ -824,7 +945,7 @@ function RoomHistoryPage() {
             <>
               <Card className="room-details-panel" variant="outlined">
                 <CardContent>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={3}>
                     <Grid item xs={12} sm={6} md={3}>
                       <Typography color="text.secondary">Room Number</Typography>
                       <Typography fontWeight={700}>Room {room.number}</Typography>
@@ -846,16 +967,16 @@ function RoomHistoryPage() {
               </Card>
 
               {room.bookings.length === 0 ? (
-                <Alert severity="info">No booking history found for this room.</Alert>
+                <Alert severity="info">
+                  This room does not have any booking history yet.
+                </Alert>
               ) : (
                 <Card variant="outlined">
                   <TableContainer>
                     <Table className="history-table">
                       <TableHead>
                         <TableRow>
-                          <TableCell>Booking ID</TableCell>
                           <TableCell>Customer Name</TableCell>
-                          <TableCell>Customer Email</TableCell>
                           <TableCell>Check In</TableCell>
                           <TableCell>Check Out</TableCell>
                           <TableCell align="right">Guests</TableCell>
@@ -865,9 +986,7 @@ function RoomHistoryPage() {
                       <TableBody>
                         {room.bookings.map((booking) => (
                           <TableRow key={booking.id} hover>
-                            <TableCell>#{booking.id}</TableCell>
                             <TableCell>{booking.customer_name}</TableCell>
-                            <TableCell>{booking.customer_email}</TableCell>
                             <TableCell>{formatDate(booking.check_in)}</TableCell>
                             <TableCell>{formatDate(booking.check_out)}</TableCell>
                             <TableCell align="right">{booking.guests}</TableCell>

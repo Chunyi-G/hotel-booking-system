@@ -18,6 +18,17 @@
   padding: 8px;
 }
 
+.dashboard-filter-panel {
+  padding: 20px;
+}
+
+.dashboard-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 420px) minmax(180px, 240px);
+  gap: 16px;
+  align-items: center;
+}
+
 .booking-summary {
   display: flex;
   justify-content: space-between;
@@ -31,7 +42,7 @@
 }
 
 .history-table {
-  min-width: 860px;
+  min-width: 680px;
 }
 
 .room-details-panel .MuiCardContent-root {
@@ -45,8 +56,24 @@
   background: #f8fafc;
 }
 
-.filter-title {
-  margin-bottom: 18px;
+.room-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr)) minmax(140px, 180px);
+  gap: 16px;
+  align-items: stretch;
+  padding-top: 4px;
+}
+
+.room-filter-grid > * {
+  min-width: 180px;
+}
+
+.room-filter-action {
+  display: flex;
+}
+
+.room-filter-action .MuiButton-root {
+  min-height: 56px;
 }
 
 .room-card {
@@ -83,6 +110,18 @@
 
   .search-panel {
     padding: 16px;
+  }
+
+  .room-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-filter-grid > * {
+    min-width: 0;
+  }
+
+  .dashboard-filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .booking-summary {
