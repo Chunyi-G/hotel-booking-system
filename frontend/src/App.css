@@ -30,7 +30,16 @@
   min-width: 1180px;
 }
 
-.bookings-table .MuiTableCell-head {
+.history-table {
+  min-width: 860px;
+}
+
+.room-details-panel .MuiCardContent-root {
+  padding: 24px;
+}
+
+.bookings-table .MuiTableCell-head,
+.history-table .MuiTableCell-head {
   color: #334155;
   font-weight: 700;
   background: #f8fafc;
