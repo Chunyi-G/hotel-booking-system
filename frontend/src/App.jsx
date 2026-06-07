@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ThemeProvider } from '@mui/material'
 import NavigationBar from './components/NavigationBar'
 import BookingSuccessPage from './pages/BookingSuccessPage'
+import CustomerHistoryPage from './pages/CustomerHistoryPage'
 import RoomHistoryPage from './pages/RoomHistoryPage'
 import RoomSearchPage from './pages/RoomSearchPage'
 import StaffDashboardPage from './pages/StaffDashboardPage'
@@ -18,6 +19,7 @@ function App() {
           <Route path="/booking-success" element={<BookingSuccessPage />} />
           <Route path="/staff-dashboard" element={<StaffDashboardPage />} />
           <Route path="/rooms/:id/history" element={<RoomHistoryPage />} />
+          <Route path="/customers/:email/history" element={<CustomerHistoryPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

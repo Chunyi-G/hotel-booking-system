@@ -354,6 +354,15 @@ function StaffDashboardPage() {
           </DialogContent>
         )}
         <DialogActions>
+          {selectedBooking && (
+            <Button
+              component={RouterLink}
+              to={`/customers/${encodeURIComponent(selectedBooking.customer_email)}/history`}
+              onClick={handleCloseBookingDialog}
+            >
+              View Customer History
+            </Button>
+          )}
           <Button onClick={handleCloseBookingDialog}>Close</Button>
         </DialogActions>
       </Dialog>
