@@ -24,6 +24,12 @@ import {
   MenuItem,
   Select,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   ThemeProvider,
   Typography,
@@ -75,6 +81,14 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'MYR',
   }).format(Number(value))
+}
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat('en-MY', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value))
 }
 
 function RoomSearchPage() {
@@ -615,6 +629,132 @@ function BookingSuccessPage() {
   )
 }
 
+function StaffDashboardPage() {
+  const [bookings, setBookings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const loadBookings = async () => {
+      setIsLoading(true)
+      setError('')
+
+      try {
+        const response = await fetch('/api/bookings')
+        const payload = await response.json()
+
+        if (!response.ok) {
+          throw new Error(payload.message || 'Unable to load bookings.')
+        }
+
+        const newestFirst = [...(payload.data || [])].sort(
+          (first, second) => new Date(second.created_at) - new Date(first.created_at),
+        )
+
+        setBookings(newestFirst)
+      } catch (loadError) {
+        setBookings([])
+        setError(loadError.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadBookings()
+  }, [])
+
+  return (
+    <Box className="app-shell">
+      <Container maxWidth="xl">
+        <Stack spacing={4}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Box className="page-header">
+              <Typography component="h1" variant="h1">
+                Staff Dashboard
+              </Typography>
+              <Typography color="text.secondary">
+                View hotel bookings sorted by newest first.
+              </Typography>
+            </Box>
+            <Box>
+              <Button component={RouterLink} to="/" variant="outlined">
+                Back to Rooms
+              </Button>
+            </Box>
+          </Stack>
+
+          {isLoading && (
+            <Box className="loading-state">
+              <CircularProgress size={28} />
+              <Typography color="text.secondary">Loading bookings</Typography>
+            </Box>
+          )}
+
+          {error && <Alert severity="error">{error}</Alert>}
+
+          {!isLoading && !error && bookings.length === 0 && (
+            <Alert severity="info">No bookings found.</Alert>
+          )}
+
+          {!isLoading && !error && bookings.length > 0 && (
+            <Card variant="outlined">
+              <TableContainer>
+                <Table className="bookings-table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Booking ID</TableCell>
+                      <TableCell>Room Number</TableCell>
+                      <TableCell>Customer Name</TableCell>
+                      <TableCell>Customer Email</TableCell>
+                      <TableCell>Check In</TableCell>
+                      <TableCell>Check Out</TableCell>
+                      <TableCell align="right">Guests</TableCell>
+                      <TableCell align="right">Total Price</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">History</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {bookings.map((booking) => (
+                      <TableRow key={booking.id} hover>
+                        <TableCell>#{booking.id}</TableCell>
+                        <TableCell>{booking.room?.number}</TableCell>
+                        <TableCell>{booking.customer_name}</TableCell>
+                        <TableCell>{booking.customer_email}</TableCell>
+                        <TableCell>{formatDate(booking.check_in)}</TableCell>
+                        <TableCell>{formatDate(booking.check_out)}</TableCell>
+                        <TableCell align="right">{booking.guests}</TableCell>
+                        <TableCell align="right">{formatCurrency(booking.total_price)}</TableCell>
+                        <TableCell>
+                          <Chip label={booking.status} size="small" variant="outlined" />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Button
+                            component={RouterLink}
+                            size="small"
+                            to={`/rooms/${booking.room_id}/history`}
+                            variant="outlined"
+                          >
+                            View History
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          )}
+        </Stack>
+      </Container>
+    </Box>
+  )
+}
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -622,6 +762,7 @@ function App() {
         <Routes>
           <Route path="/" element={<RoomSearchPage />} />
           <Route path="/booking-success" element={<BookingSuccessPage />} />
+          <Route path="/staff-dashboard" element={<StaffDashboardPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

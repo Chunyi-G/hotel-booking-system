@@ -26,6 +26,16 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.bookings-table {
+  min-width: 1180px;
+}
+
+.bookings-table .MuiTableCell-head {
+  color: #334155;
+  font-weight: 700;
+  background: #f8fafc;
+}
+
 .filter-title {
   margin-bottom: 18px;
 }
