@@ -81,24 +81,34 @@ function RoomHistoryPage() {
             <>
               <Card className="room-details-panel" variant="outlined">
                 <CardContent>
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography color="text.secondary">Room Number</Typography>
-                      <Typography fontWeight={700}>Room {room.number}</Typography>
+                  <Grid container spacing={2.5} alignItems="stretch">
+                    <Grid item xs={12} md={3}>
+                      <Box className="room-details-feature">
+                        <Typography color="text.secondary">Room Number</Typography>
+                        <Typography component="h2" variant="h2">
+                          Room {room.number}
+                        </Typography>
+                      </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography color="text.secondary">Category</Typography>
-                      <Typography fontWeight={700}>{room.category}</Typography>
+                      <Box className="room-details-stat">
+                        <Typography color="text.secondary">Category</Typography>
+                        <Typography fontWeight={700}>{room.category}</Typography>
+                      </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography color="text.secondary">Capacity</Typography>
-                      <Typography fontWeight={700}>{room.capacity} guests</Typography>
+                      <Box className="room-details-stat">
+                        <Typography color="text.secondary">Capacity</Typography>
+                        <Typography fontWeight={700}>{room.capacity} guests</Typography>
+                      </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <Typography color="text.secondary">Price per Night</Typography>
-                      <Typography fontWeight={700}>
-                        {formatCurrency(room.price_per_night)}
-                      </Typography>
+                      <Box className="room-details-stat">
+                        <Typography color="text.secondary">Price per Night</Typography>
+                        <Typography fontWeight={700}>
+                          {formatCurrency(room.price_per_night)}
+                        </Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </CardContent>

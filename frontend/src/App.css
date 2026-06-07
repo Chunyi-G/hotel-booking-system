@@ -116,6 +116,19 @@
   padding: 24px;
 }
 
+.room-details-feature,
+.room-details-stat {
+  height: 100%;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.room-details-feature {
+  background: linear-gradient(180deg, #f0fdfa, #ffffff);
+}
+
 .bookings-table .MuiTableCell-head,
 .history-table .MuiTableCell-head,
 .customer-history-table .MuiTableCell-head {
