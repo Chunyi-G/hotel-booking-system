@@ -56,9 +56,13 @@ class BookingController extends Controller
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_email' => ['required', 'email', 'max:150'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
-            'check_in' => ['required', 'date', 'before:check_out'],
+            'check_in' => ['required', 'date', 'after_or_equal:today', 'before:check_out'],
             'check_out' => ['required', 'date', 'after:check_in'],
             'guests' => ['required', 'integer', 'min:1', 'max:10'],
+        ], [
+            'check_in.after_or_equal' => 'Check-in date must be today or later.',
+            'check_in.before' => 'Check-in date must be before check-out date.',
+            'check_out.after' => 'Check-out date must be after check-in date.',
         ]);
 
         $booking = DB::transaction(function () use ($validated): Booking {

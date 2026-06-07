@@ -12,9 +12,13 @@ class RoomAvailabilityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'check_in' => ['required', 'date', 'before:check_out'],
+            'check_in' => ['required', 'date', 'after_or_equal:today', 'before:check_out'],
             'check_out' => ['required', 'date', 'after:check_in'],
             'category' => ['nullable', 'string', 'max:50'],
+        ], [
+            'check_in.after_or_equal' => 'Check-in date must be today or later.',
+            'check_in.before' => 'Check-in date must be before check-out date.',
+            'check_out.after' => 'Check-out date must be after check-in date.',
         ]);
 
         $rooms = Room::query()

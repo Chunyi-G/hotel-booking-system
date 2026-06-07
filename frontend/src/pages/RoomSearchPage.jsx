@@ -31,6 +31,10 @@ const initialBookingForm = {
   guests: 1,
 }
 
+function getTodayDateString() {
+  return new Date().toISOString().split('T')[0]
+}
+
 function RoomSearchPage() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState({
@@ -49,6 +53,7 @@ function RoomSearchPage() {
   const [bookingErrorMessage, setBookingErrorMessage] = useState('')
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
   const [bookingCompleted, setBookingCompleted] = useState(false)
+  const today = getTodayDateString()
 
   useEffect(() => {
     const loadRooms = async () => {
@@ -103,27 +108,43 @@ function RoomSearchPage() {
     setBookingCompleted(false)
   }
 
+  const validateDateRange = () => {
+    const hasCheckIn = Boolean(filters.check_in)
+    const hasCheckOut = Boolean(filters.check_out)
+    const hasDateRange = hasCheckIn && hasCheckOut
+
+    if (hasCheckIn && filters.check_in < today) {
+      return 'Check-in date cannot be in the past.'
+    }
+
+    if (hasCheckOut && filters.check_out < today) {
+      return 'Check-out date cannot be in the past.'
+    }
+
+    if (hasCheckIn !== hasCheckOut) {
+      return 'Please select both check-in and check-out dates to filter by availability.'
+    }
+
+    if (hasDateRange && filters.check_out <= filters.check_in) {
+      return 'Check-out date must be after check-in date.'
+    }
+
+    return ''
+  }
+
   const handleSearch = async (event) => {
     event.preventDefault()
     setError('')
     setHasFiltered(true)
 
-    const hasCheckIn = Boolean(filters.check_in)
-    const hasCheckOut = Boolean(filters.check_out)
-    const hasDateRange = hasCheckIn && hasCheckOut
-
-    if (hasCheckIn !== hasCheckOut) {
-      setError('Please select both check-in and check-out dates to filter by availability.')
+    const dateError = validateDateRange()
+    if (dateError) {
+      setError(dateError)
       setRooms([])
       return
     }
 
-    if (hasDateRange && filters.check_out <= filters.check_in) {
-      setError('Check-out date must be after check-in date.')
-      setRooms([])
-      return
-    }
-
+    const hasDateRange = Boolean(filters.check_in && filters.check_out)
     const params = new URLSearchParams()
 
     if (hasDateRange) {
@@ -167,8 +188,9 @@ function RoomSearchPage() {
       return
     }
 
-    if (filters.check_out <= filters.check_in) {
-      setError('Check-out date must be after check-in date.')
+    const dateError = validateDateRange()
+    if (dateError) {
+      setError(dateError)
       return
     }
 
@@ -401,6 +423,7 @@ function RoomSearchPage() {
                     name="check_in"
                     slotProps={{ inputLabel: { shrink: true } }}
                     type="date"
+                    inputProps={{ min: today }}
                     value={filters.check_in}
                     onChange={handleChange}
                   />
@@ -412,6 +435,7 @@ function RoomSearchPage() {
                     name="check_out"
                     slotProps={{ inputLabel: { shrink: true } }}
                     type="date"
+                    inputProps={{ min: today }}
                     value={filters.check_out}
                     onChange={handleChange}
                   />
